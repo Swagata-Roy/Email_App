@@ -1,3 +1,4 @@
 streamlit
 yagmail
-google-auth google-auth-oauthlib
+google-auth
+google-auth-oauthlib
