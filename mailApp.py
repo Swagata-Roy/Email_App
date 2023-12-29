@@ -1,33 +1,73 @@
+import os
+import base64
 import streamlit as st
-import yagmail
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from google.auth.transport.requests import Request
+from googleapiclient.discovery import build
 
-# Set up yagmail SMTP connection
-yag = yagmail.SMTP("your_email@gmail.com", "your_email_password")
+# Constants
+CLIENT_SECRET_FILE = 'client_secret.json'
+API_NAME = 'gmail'
+API_VERSION = 'v1'
+SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
+
+# Set up Gmail API connection
+def create_gmail_service():
+    credentials = None
+
+    if os.path.exists('token.json'):
+        credentials = Credentials.from_authorized_user_file('token.json')
+    
+    if not credentials or not credentials.valid:
+        if credentials and credentials.expired and credentials.refresh_token:
+            credentials.refresh(Request())
+        else:
+            flow = InstalledAppFlow.from_client_secrets_file(CLIENT_SECRET_FILE, SCOPES)
+            credentials = flow.run_local_server(port=0)
+
+        with open('token.json', 'w') as token:
+            token.write(credentials.to_json())
+
+    service = build(API_NAME, API_VERSION, credentials=credentials)
+    return service
+
+# Fetch emails using Gmail API
+def get_emails(service):
+    results = service.users().messages().list(userId='me').execute()
+    messages = results.get('messages', [])
+    return messages
 
 # Streamlit app layout
 def app_layout():
     st.sidebar.title('Email App')
-    email_address = st.sidebar.text_input('Enter Your Email Address', '')
 
-    if email_address:
-        st.title(f'Inbox - {email_address}')
-        search_input = st.text_input('Search', '')
+    # OAuth and API setup
+    st.warning("Please run this app with '--server.enableCORS=False' to enable OAuth in the Streamlit app.")
+    service = create_gmail_service()
 
-        # Display emails or show a message if no emails
-        if st.button('Load Emails'):
-            # Implement email fetching logic here
-            # For simplicity, let's assume you have a function get_emails(email_address) that returns a list of emails
-            emails = get_emails(email_address)
+    st.title('Inbox - Gmail')  # Change this to the appropriate email provider
+    search_input = st.text_input('Search', '')
 
-            if emails:
-                for email in emails:
-                    st.write(f"From: {email['from']}")
-                    st.write(f"Subject: {email['subject']}")
-                    st.write(f"Date: {email['date']}")
-                    st.write(f"Content: {email['content']}")
-                    st.write('---')
-            else:
-                st.write('No emails found.')
+    # Display emails or show a message if no emails
+    if st.button('Load Emails'):
+        emails = get_emails(service)
+
+        if emails:
+            for email in emails:
+                message = service.users().messages().get(userId='me', id=email['id']).execute()
+                subject = next(h['value'] for h in message['payload']['headers'] if h['name'] == 'Subject')
+                sender = next(h['value'] for h in message['payload']['headers'] if h['name'] == 'From')
+                date = next(h['value'] for h in message['payload']['headers'] if h['name'] == 'Date')
+                body = base64.urlsafe_b64decode(message['payload']['body']['data']).decode('utf-8')
+
+                st.write(f"From: {sender}")
+                st.write(f"Subject: {subject}")
+                st.write(f"Date: {date}")
+                st.write(f"Content: {body}")
+                st.write('---')
+        else:
+            st.write('No emails found.')
 
 # Streamlit app
 if __name__ == '__main__':
