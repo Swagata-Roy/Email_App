@@ -1,37 +1,34 @@
 import streamlit as st
+import yagmail
 
-# Set the background image URL
-background_image_url = 'https://images.pexels.com/photos/1366919/pexels-photo-1366919.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1'
+# Set up yagmail SMTP connection
+yag = yagmail.SMTP("your_email@gmail.com", "your_email_password")
 
-# Define the Streamlit app layout
+# Streamlit app layout
 def app_layout():
-    st.sidebar.title('New Mail')
-    st.sidebar.header('Accounts:')
-    st.sidebar.text('example@gmail.com')
-    st.sidebar.header('Folders')
-    st.sidebar.text('Inbox')
-    st.sidebar.text('More')
+    st.sidebar.title('Email App')
+    email_address = st.sidebar.text_input('Enter Your Email Address', '')
 
-    st.title('Inbox - One-example')
-    search_input = st.text_input('Search', '')
+    if email_address:
+        st.title(f'Inbox - {email_address}')
+        search_input = st.text_input('Search', '')
 
-    st.write('Nothing has arrived yet')
+        # Display emails or show a message if no emails
+        if st.button('Load Emails'):
+            # Implement email fetching logic here
+            # For simplicity, let's assume you have a function get_emails(email_address) that returns a list of emails
+            emails = get_emails(email_address)
 
-# Set the background image using CSS
-def set_background():
-    st.markdown(
-        f"""
-        <style>
-            .reportview-container {{
-                background: url({background_image_url});
-                background-size: cover;
-            }}
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
+            if emails:
+                for email in emails:
+                    st.write(f"From: {email['from']}")
+                    st.write(f"Subject: {email['subject']}")
+                    st.write(f"Date: {email['date']}")
+                    st.write(f"Content: {email['content']}")
+                    st.write('---')
+            else:
+                st.write('No emails found.')
 
-# Run the Streamlit app
+# Streamlit app
 if __name__ == '__main__':
-    set_background()
     app_layout()
