@@ -1,2 +1,8 @@
 streamlit
 yagmail
+os
+base64
+google.oauth2.credentials
+google_auth_oauthlib.flow
+google.auth.transport.requests
+googleapiclient.discovery
