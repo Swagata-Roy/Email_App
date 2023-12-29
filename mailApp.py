@@ -7,7 +7,7 @@ background_image_url = 'https://images.pexels.com/photos/1366919/pexels-photo-13
 def app_layout():
     st.sidebar.title('New Mail')
     st.sidebar.header('Accounts:')
-    st.sidebar.text('one-example@thousand-one-example.com')
+    st.sidebar.text('example@gmail.com')
     st.sidebar.header('Folders')
     st.sidebar.text('Inbox')
     st.sidebar.text('More')
